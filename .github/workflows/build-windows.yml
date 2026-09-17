@@ -1,0 +1,50 @@
+name: Build Windows Game
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths:
+      - 'Assets/**'
+      - 'Packages/**'
+      - 'ProjectSettings/**'
+      - '.github/workflows/build-windows.yml'
+
+permissions:
+  contents: read
+
+env:
+  UNITY_LICENSE: ${{ secrets.UNITY_LICENSE }}
+
+jobs:
+  build-windows:
+    name: Build Windows x64
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout project
+        uses: actions/checkout@v4
+        with:
+          lfs: true
+
+      - name: Cache Unity Library
+        uses: actions/cache@v4
+        with:
+          path: Library
+          key: Library-${{ hashFiles('Assets/**', 'Packages/**', 'ProjectSettings/**') }}
+          restore-keys: |
+            Library-
+
+      - name: Build game
+        uses: game-ci/unity-builder@v4
+        with:
+          unityVersion: 2022.3.62f1
+          targetPlatform: StandaloneWindows64
+          buildMethod: BuildWindows.PerformBuild
+
+      - name: Upload Windows build
+        uses: actions/upload-artifact@v4
+        with:
+          name: ChunkWars-Windows-x64
+          path: build/Windows
+          if-no-files-found: error
+          retention-days: 30
